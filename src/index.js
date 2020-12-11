@@ -24,9 +24,46 @@ app.get("/users/:id", async (req, res) => {
             return res.status(404).send()
         }
         
-        return res.send(user)
+        return res.send(getUserByID)
     } catch (error) {
         res.status(500).send(error)
+    }
+})
+
+app.post("/users", async (req, res) => {
+    const newUser = new User(req.body)
+    try {
+        await newUser.save()
+        return res.status(201).send(newUser)
+    } catch (error) {
+        return res.status(500).send(error)
+    }
+})
+
+app.patch("/users/:id", async (req, res) => {
+    const userId = req.params.id
+    const fieldToUpdate = req.body
+    const updates = Object.keys(fieldToUpdate)
+    const allowedUpdates = ["name", "email", "password", "age"]
+    
+    const isUpdateValid = updates.every((update) => {
+        return allowedUpdates.includes(update)
+    })
+    
+
+    if(!isUpdateValid){
+        return res.status(400).send({ error: "Invalid updates" })
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, fieldToUpdate, { new: true, runValidators: true })
+    try {
+        if(!updatedUser) {
+            return res.status(404).send()
+        }
+        
+        return res.send(updatedUser)
+    } catch (error) {
+        return res.status(400).send(error)
     }
 })
 
@@ -47,27 +84,44 @@ app.get("/tasks/:id", async (req, res) => {
             return res.status(404).send()
         }
 
-        return res.send(task)
+        return res.send(taskById)
     } catch (error) {
         res.status(500).send(error)
     }
 })
 
-app.post("/users", async (req, res) => {
-    const newUser = new User(req.body)
-    try {
-        await newUser.save()
-        return res.status(201).send(newUser)
-    } catch (error) {
-        return res.status(400).send(error)
-    }
-})
 
 app.post("/tasks", async (req, res) => {
     const newTask = new Task(req.body)
     try {
         await newTask.save()
         return res.status(201).send(newTask)
+    } catch (error) {
+        return res.status(500).send(error)
+    }
+})
+
+app.patch("/tasks/:id", async (req, res) => {
+    const taskId = req.params.id
+    const fieldToUpdate = req.body
+    const updates = Object.keys(fieldToUpdate)
+    const allowedUpdates = ["completed", "description"]
+
+    const isUpdateValid = updates.every((update) => {
+        return allowedUpdates.includes(update)
+    })
+
+    if(!isUpdateValid){
+        return res.status(400).send({ error: "Invalid updates" })
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(taskId, fieldToUpdate, { new: true, runValidators: true })
+    try {
+        if(!updatedTask){
+            return res.status(404).send()
+        }
+
+        return res.send(updatedTask)
     } catch (error) {
         return res.status(400).send(error)
     }
