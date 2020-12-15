@@ -9,6 +9,7 @@ async function auth(req, res, next) {
         if(!authUser) {
             throw new Error()
         }
+        req.token = token
         req.user = authUser
         next()
     } catch (error) {
