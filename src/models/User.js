@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const Task = require("./Task")
 const bcrypt = require("bcrypt")
 const validator = require("validator")
 const jwt = require("jsonwebtoken")
@@ -98,6 +99,13 @@ userSchema.pre("save", async function (next){
         user.password = await bcrypt.hash(user.password, 8)
     }
 
+    next()
+})
+
+userSchema.pre("remove", async function (next){
+    const user = this
+    await Task.deleteMany({ author: user._id })
+    
     next()
 })
 
