@@ -7,19 +7,6 @@ router.get("/users/me", auth, (req, res) => {
     res.send(req.user)
 })
 
-router.get("/users/:id", async (req, res) => {
-    const getUserByID =  await User.findOne({ _id: req.params.id })
-    try {
-        if(!getUserByID){
-            return res.status(404).send()
-        }
-        
-        return res.send(getUserByID)
-    } catch (error) {
-        res.status(500).send(error)
-    }
-})
-
 router.post("/users", async (req, res) => {
     const newUser = new User(req.body)
     try {
@@ -65,8 +52,7 @@ router.post("/users/logoutAll", auth, async (req, res) => {
     }
 })
 
-router.patch("/users/:id", async (req, res) => {
-    const userId = req.params.id
+router.patch("/users/me", auth, async (req, res) => {
     const fieldToUpdate = req.body
     const updates = Object.keys(fieldToUpdate)
     const allowedUpdates = ["name", "email", "password", "age"]
@@ -74,38 +60,27 @@ router.patch("/users/:id", async (req, res) => {
     const isUpdateValid = updates.every((update) => {
         return allowedUpdates.includes(update)
     })
-    
 
     if(!isUpdateValid){
         return res.status(400).send({ error: "Invalid updates" })
     }
 
     try {
-        const updatedUser = await User.findById(userId)
+        updates.forEach((update) => req.user[update] = fieldToUpdate[update] )
 
-        updates.forEach((update) => updatedUser[update] = req.body[update] )
-
-        await updatedUser.save()
-
-        if(!updatedUser) {
-            return res.status(404).send()
-        }
+        await req.user.save()
         
-        return res.send(updatedUser)
+        return res.send(req.user)
     } catch (error) {
         return res.status(400).send(error)
     }
 })
 
-router.delete("/users/:id", async (req, res) => {
+router.delete("/users/me", auth, async (req, res) => {
     try {
-       const deletedUser = await User.findByIdAndDelete(req.params.id)
-       
-       if (!deletedUser) {
-           return res.status(404).send()
-       }
+        await req.user.remove()
 
-       res.send(deletedUser)
+       res.send(req.user)
     } catch (error) {
         res.status(500).send()
     }
