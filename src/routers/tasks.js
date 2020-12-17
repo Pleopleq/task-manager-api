@@ -3,11 +3,26 @@ const Task = require("../models/Task")
 const auth = require("../middleware/auth")
 const router = new express.Router()
 
+//GET /tasks?completed=BOOL
+//GET /tasks?limit=NUMBER&skip=NUMBER
+
 router.get("/tasks", auth, async (req, res) => {
     try {
-        const tasks = await Task.find({ author:req.user._id })
+        const match = {}
 
-        return res.send(tasks)
+        if(req.query.completed) {
+            match.completed = req.query.completed === "true"
+        }
+
+        await req.user.populate({
+            path: "tasks",
+            match,
+            options: {
+                limit: parseInt(req.query.limit),
+                skip: parseInt(req.query.skip)
+            }
+        }).execPopulate()
+        res.send(req.user.tasks)
     } catch (error) {
         res.status(500).send(error)
     }
